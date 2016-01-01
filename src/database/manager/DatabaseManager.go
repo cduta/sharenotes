@@ -2,7 +2,6 @@ package manager
 
 import (
 	"database/sql"
-	"fmt"
 	_ "github.com/mattn/go-sqlite3"
 	"log"
 	"note"
@@ -13,12 +12,14 @@ import (
 
 const DB_FILE_NAME = "sndb.db"
 
+const DATE_FORMAT = "1999-12-31 24:12:59";
+
 const INITIALIZE_NOTES_TABLE_EXEC = `create table notes (
         noteID integer not null primary key, 
         title text, 
         text text, 
-        addDate DATETIME, 
-        changeDate DATETIME
+        addDate time, 
+        changeDate time
     );`
 
 const SELECT_NOTES_QS = `select noteID, title, text, addDate, changeDate 
@@ -115,10 +116,6 @@ func (dbm *DatabaseManager) Close() {
 	dbm.db.Close()
 }
 
-func toSQLiteDateTimeString(t time.Time) string {
-	return fmt.Sprintf("", t.Year(), "-", t.Month(), "-", t.Day(), " ", t.Hour(), ":", t.Minute(), ":", t.Second())
-}
-
 func (dbm *DatabaseManager) AddNote(n note.Note) error {
 
 	transaction, err := dbm.db.Begin()
@@ -134,7 +131,7 @@ func (dbm *DatabaseManager) AddNote(n note.Note) error {
 	}
 	defer stmt.Close()
 
-	_, err = stmt.Exec(n.Title(), n.Text(), toSQLiteDateTimeString(n.AddDate()), toSQLiteDateTimeString(n.ChangeDate()))
+	_, err = stmt.Exec(n.Title(), n.Text(), n.AddDate().Unix(), n.ChangeDate().Unix())
 	if err != nil {
 		log.Printf("%q: %s\n", err, "Add note in add transaction.")
 		return err
@@ -159,7 +156,7 @@ func (dbm *DatabaseManager) UpdateNote(n note.Note) error {
 	}
 	defer updateStatement.Close()
 
-	_, err = updateStatement.Exec(n.Title(), n.Text(), toSQLiteDateTimeString(n.ChangeDate()), strconv.Itoa(n.NoteID()))
+	_, err = updateStatement.Exec(n.Title(), n.Text(), n.ChangeDate().Unix(), strconv.Itoa(n.NoteID()))
 	if err != nil {
 		log.Printf("%q: %s\n", err, "Update note in update transaction.")
 		return err
@@ -208,10 +205,10 @@ func (dbm *DatabaseManager) LoadNotes() ([]note.Note, error) {
 			var noteID int
 			var title string
 			var text string
-			var addDate time.Time
-			var changeDate time.Time
+			var addDate int64
+			var changeDate int64
 			rows.Scan(&noteID, &title, &text, &addDate, &changeDate)
-			dbm.notes = append(dbm.notes, note.NewLocal(noteID, title, text, addDate, changeDate))
+			dbm.notes = append(dbm.notes, note.NewLocal(noteID, title, text, time.Unix(addDate, 0), time.Unix(changeDate, 0)))
 		}
 	}
 
@@ -230,8 +227,8 @@ func (dbm *DatabaseManager) GetNote(noteID int) (note.Note, error) {
 
 	var title string
 	var text string
-	var addDate time.Time
-	var changeDate time.Time
+	var addDate int64
+	var changeDate int64
 
 	err = lookupQuery.QueryRow(strconv.Itoa(noteID)).Scan(&title, &text, &addDate, &changeDate)
 	if err != nil {
@@ -239,5 +236,5 @@ func (dbm *DatabaseManager) GetNote(noteID int) (note.Note, error) {
 		return note.Note{}, err
 	}
 
-	return note.NewLocal(noteID, title, text, addDate, changeDate), err
+	return note.NewLocal(noteID, title, text, time.Unix(addDate,0), time.Unix(changeDate, 0)), err
 }

@@ -12,7 +12,7 @@
 <h1>Note {{.NoteID}}</h1>
 
 <form action="/SaveNote/{{.NoteID}}" method="POST">
-    <div><textarea name="title" rows="1" cols="50">{{.Title}}</textarea></div>
+    <div><input name="title" rows="1" cols="50" value={{.Title}}></div>
     <div><textarea name="text" rows="20" cols="80">{{.Text}}</textarea></div>
     <div>
         <input type="submit" value="Save"> 
@@ -20,6 +20,13 @@
         <a href="/ConfirmDeleteNote/{{.NoteID}}" target="_top">Delete</a> 
     </div>
 </form>
+
+ <footer>
+  <small>
+    <div>Last Changed: {{.AddDate}}</div>
+    <div>Created: {{.ChangeDate}}</div>
+  </small>
+</footer> 
 
 </body>
 </html>

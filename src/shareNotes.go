@@ -13,6 +13,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+    "time"
 )
 
 type htmlTable struct {
@@ -20,9 +21,11 @@ type htmlTable struct {
 }
 
 type htmlNote struct {
-	NoteID int
-	Title  string
-	Text   template.HTML
+	NoteID     int
+	Title      string
+	Text       template.HTML
+    AddDate    time.Time
+	ChangeDate time.Time
 }
 
 func partialHtmlParser(text string) template.HTML {
@@ -64,9 +67,11 @@ func partialHtmlParser(text string) template.HTML {
 
 func noteToHtmlNote(note note.Note) htmlNote {
 	return htmlNote{
-		NoteID: note.NoteID(),
-		Title:  note.Title(),
-		Text:   partialHtmlParser(note.Text())}
+		NoteID:     note.NoteID(),
+		Title:      note.Title(),
+		Text:       partialHtmlParser(note.Text()),
+        AddDate:    note.AddDate(),
+        ChangeDate: note.ChangeDate()}
 }
 
 var dbManager = manager.New()
