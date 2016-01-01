@@ -17,7 +17,7 @@ type htmlTable struct {
 
 var dbManager = manager.New()
 
-var templates = template.Must(template.ParseFiles("index.html", "AddNote.html", "NoteDetails.html"))
+var templates = template.Must(template.ParseFiles("index.html", "AddNote.html", "Note.html"))
 
 func indexHandler(writer http.ResponseWriter, request *http.Request) {    
     var err error
@@ -57,32 +57,61 @@ func newNoteHandler(writer http.ResponseWriter, request *http.Request) {
         return
 	}
     
-    fmt.Println("####\nAdd Note\n"+title+"\n"+text+"\n####")
+    //fmt.Println("####\nAdd Note\n"+title+"\n"+text+"\n####")
     
     http.Redirect(writer, request, "/", http.StatusFound)
 }
 
 func noteDetailsHandler(writer http.ResponseWriter, request *http.Request, noteID int) {    
-    // Get Note in DB
-    fmt.Println("####\nGet Note "+strconv.Itoa(noteID)+" Details\n####")
+    var err error
+    var foundNote note.Note
     
-	err := templates.ExecuteTemplate(writer, "NoteDetails.html", note.New("Butt", "Buttocks"))
+    //fmt.Println("####\nGet Note "+strconv.Itoa(noteID)+"\n####")
+
+    foundNote, err = dbManager.GetNote(noteID)
+    if err != nil {
+		http.Error(writer, err.Error(), http.StatusInternalServerError)
+        return
+	}
+        
+	err = templates.ExecuteTemplate(writer, "Note.html", foundNote)
 	if err != nil {
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
+        return
 	}
 }
 
 func saveNoteHandler(writer http.ResponseWriter, request *http.Request, noteID int) {
+    foundNote, err := dbManager.GetNote(noteID)
+    if err != nil {
+		http.Error(writer, err.Error(), http.StatusInternalServerError)
+        return
+	}
+    
     title := request.FormValue("title")
     text := request.FormValue("text")
-    // Update Note in DB
     
-    fmt.Println("####\nNote "+strconv.Itoa(noteID)+" saved\n"+title+"\n"+text+"\n####")
+    //fmt.Println("####\nNote "+strconv.Itoa(noteID)+" saved\n"+title+"\n"+text+"\n####")
+    
+    var dirtyBit bool = false;
+    if(foundNote.Title() != title) {
+        dirtyBit = true;
+        foundNote.SetTitle(title)
+    }
+    
+    if(foundNote.Text() != text) {
+        dirtyBit = true;
+        foundNote.SetText(text);
+    }
+    
+    if(dirtyBit) {
+        dbManager.UpdateNote(foundNote)
+    }
     
     http.Redirect(writer, request, "/", http.StatusFound)
 }
 
-var validPath = regexp.MustCompile("^/(NoteDetails|SaveNote)/([0-9]+)$")
+var validPath = regexp.MustCompile("^/(Note|SaveNote)/([0-9]+)$")
 
 func makeDetailsHandler(function func(http.ResponseWriter, *http.Request, int)) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
@@ -100,13 +129,13 @@ func main() {
     http.HandleFunc("/", indexHandler)
     http.HandleFunc("/AddNote/", addNoteHandler)
     http.HandleFunc("/NewNote/", newNoteHandler)
-    http.HandleFunc("/NoteDetails/", makeDetailsHandler(noteDetailsHandler))
+    http.HandleFunc("/Note/", makeDetailsHandler(noteDetailsHandler))
     http.HandleFunc("/SaveNote/", makeDetailsHandler(saveNoteHandler))
 
     err := dbManager.Open()
     
     if err != nil {
-		log.Fatal(err)
+        log.Fatal(err)
         return 
 	}
     
