@@ -12,35 +12,35 @@
 
 <div class="container">
   <h2>ShareNotes</h2>
-  <table class="table table-condensed">
+  <table class="table table-condensed table-striped table-hover">
     <tbody>
         <tr>
-          <td>
-            <a href="/AddNote/" target="_top">AddNote</a>             
+          <td class="col-md-1">
+            <a href="/AddNote/" target="_top">Add Note...</a>
           </td>
           <td>
           </td>
         </tr>
         {{range .Notes}}
-        
-        <tr>
-          <td>
-            <a href="/Note/{{.NoteID}}" target="_top">[ | ]</a> 
-            <a href="/Note/{{.NoteID}}" target="_top">[ P ]</a> 
-            <a href="/ConfirmDeleteNote/{{.NoteID}}" target="_top">[ D ]</a> 
-          </td>
-          <td>
-            <div>
-              {{.Title}}
-            </div>
-            <div>
-              {{.Text}}
-            </div>
-          </td>
-        </tr>
-        
+          <tr>
+            <td class="col-md-1">
+              <a href="/Note/{{.NoteID}}" target="_top">[ | ]</a> 
+              <a href="/Note/{{.NoteID}}" target="_top">[ P ]</a> 
+              <a href="/ConfirmDeleteNote/{{.NoteID}}" target="_top">[ D ]</a> 
+            </td>
+            <td>
+              <div>
+                <b>{{.Title}}</b>
+              </div>
+              <div>
+                {{.Text}}
+              </div>
+            </td>
+          </tr>
         {{else}} 
           <tr> 
+            <td>
+            </td>
             <td>
               No notes yet... 
             </td>
@@ -49,6 +49,12 @@
     </tbody>
   </table>
 </div>
+
+ <footer>
+  <small>
+    <div>(c)2016 <a href="https://github.com/Ryoga-Unryu/sharenotes" target="_top">ShareNotes Source</a></div>
+  </small>
+</footer> 
 
 </body>
 </html>
