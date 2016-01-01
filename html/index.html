@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>ShareNotes</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+  <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+</head>
+<body>
+
+<div class="container">
+  <h2>ShareNotes</h2>
+  <table class="table table-condensed">
+    <tbody>
+        <tr>
+          <td>
+            <a href="/AddNote/" target="_top">AddNote</a>             
+          </td>
+          <td>
+          </td>
+        </tr>
+        {{range .Notes}}
+        
+        <tr>
+          <td>
+            <a href="/NoteDetails/{{.NoteID}}" target="_top">[ | ]</a> 
+            <a href="/NoteDetails/{{.NoteID}}" target="_top">[ P ]</a> 
+          </td>
+          <td>
+            <div>
+              {{.Title}}
+            </div>
+            <div>
+              {{.Text}}
+            </div>
+          </td>
+        </tr>
+        
+        {{else}} 
+          <tr> 
+            <td>
+              No notes yet... 
+            </td>
+          </tr>
+        {{end}}
+    </tbody>
+  </table>
+</div>
+
+</body>
+</html>
