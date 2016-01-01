@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <title>Really create a "dPaste" of Note {{.NoteID}}?</title>
+  <title>Really create a "dPaste" of {{.Title}} (ID: {{.NoteID}})?</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
@@ -9,11 +9,14 @@
   <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
 </head>
 <body>
-<h1>Really create a "dPaste" of Note {{.NoteID}}?</h1>
+<h1>Really create a "dPaste" of <b>{{.Title}}</b> (ID: {{.NoteID}})?</h1>
 
 <form action="/PasteBinNote/{{.NoteID}}" method="POST">
-    <div><b>{{.Title}}</b></div>
-    <div><input type="submit" value="dPaste"></div>
+    <div></div>
+    <div>
+      <input type="submit" value="dPaste" class="btn btn-danger btn-md" value="Submit Button"> 
+      <a href="/" class="btn btn-default btn-md" role="button" target="_top">Cancel</a>
+    </div>
 </form>
 
 </body>
