@@ -1,5 +1,5 @@
 all:
-	export GOPATH=~/golang/ShareNotes; \
+	export GOPATH=~/golang/sharenotes; \
 	cp -r html/*.html bin/; \
     go build -i -o bin/shareNotes src/shareNotes.go \
 
