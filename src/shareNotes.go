@@ -28,7 +28,9 @@ type htmlNote struct {
 
 func partialHtmlParser(text string) template.HTML {
     var links []string = xurls.Relaxed.FindAllString(text, -1)
-    sort.Strings(links)    
+    sort.Strings(links)
+    
+    printf()
     
     var lines []string = strings.Split(text, "\n")
     
@@ -107,7 +109,7 @@ func noteDetailsHandler(writer http.ResponseWriter, request *http.Request, noteI
         return
 	}
         
-	err = templates.ExecuteTemplate(writer, "Note.html", foundNote)
+	err = templates.ExecuteTemplate(writer, "Note.html", noteToHtmlNote(foundNote))
 	if err != nil {
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
         return
@@ -158,7 +160,7 @@ func confirmDeleteNoteHandler(writer http.ResponseWriter, request *http.Request,
         return
 	}
         
-	err = templates.ExecuteTemplate(writer, "DeleteNote.html", foundNote)
+	err = templates.ExecuteTemplate(writer, "DeleteNote.html", noteToHtmlNote(foundNote))
 	if err != nil {
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
         return
@@ -185,7 +187,7 @@ func confirmPasteBinNoteHandler(writer http.ResponseWriter, request *http.Reques
         return
 	}
         
-	err = templates.ExecuteTemplate(writer, "PasteBinNote.html", foundNote)
+	err = templates.ExecuteTemplate(writer, "PasteBinNote.html", noteToHtmlNote(foundNote))
 	if err != nil {
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
         return
