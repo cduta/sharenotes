@@ -1,7 +1,7 @@
 package main
 
 import (
-    "fmt"
+    //"fmt"
     "html/template"
     "net/http"
     "regexp"
@@ -17,7 +17,7 @@ type htmlTable struct {
 
 var dbManager = manager.New()
 
-var templates = template.Must(template.ParseFiles("index.html", "AddNote.html", "Note.html"))
+var templates = template.Must(template.ParseFiles("index.html", "AddNote.html", "Note.html", "DeleteNote.html"))
 
 func indexHandler(writer http.ResponseWriter, request *http.Request) {    
     var err error
@@ -105,15 +105,46 @@ func saveNoteHandler(writer http.ResponseWriter, request *http.Request, noteID i
     }
     
     if(dirtyBit) {
-        dbManager.UpdateNote(foundNote)
+        err = dbManager.UpdateNote(foundNote)
+        if err != nil {
+            http.Error(writer, err.Error(), http.StatusInternalServerError)
+            return
+        }
     }
     
     http.Redirect(writer, request, "/", http.StatusFound)
 }
 
-var validPath = regexp.MustCompile("^/(Note|SaveNote)/([0-9]+)$")
+func confirmDeleteNoteHandler(writer http.ResponseWriter, request *http.Request, noteID int) {
+    var err error
+    var foundNote note.Note
 
-func makeDetailsHandler(function func(http.ResponseWriter, *http.Request, int)) http.HandlerFunc {
+    foundNote, err = dbManager.GetNote(noteID)
+    if err != nil {
+		http.Error(writer, err.Error(), http.StatusInternalServerError)
+        return
+	}
+        
+	err = templates.ExecuteTemplate(writer, "DeleteNote.html", foundNote)
+	if err != nil {
+		http.Error(writer, err.Error(), http.StatusInternalServerError)
+        return
+	}
+}
+
+func deleteNoteHandler(writer http.ResponseWriter, request *http.Request, noteID int) {
+    err := dbManager.DeleteNote(noteID)
+    if err != nil {
+        http.Error(writer, err.Error(), http.StatusInternalServerError)
+        return
+    }
+    
+    http.Redirect(writer, request, "/", http.StatusFound)
+}
+
+var validPath = regexp.MustCompile("^/(Note|SaveNote|ConfirmDeleteNote|DeleteNote)/([0-9]+)$")
+
+func makeNoteIDHandler(function func(http.ResponseWriter, *http.Request, int)) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		urlTokens := validPath.FindStringSubmatch(request.URL.Path)
 		if urlTokens == nil {
@@ -129,8 +160,10 @@ func main() {
     http.HandleFunc("/", indexHandler)
     http.HandleFunc("/AddNote/", addNoteHandler)
     http.HandleFunc("/NewNote/", newNoteHandler)
-    http.HandleFunc("/Note/", makeDetailsHandler(noteDetailsHandler))
-    http.HandleFunc("/SaveNote/", makeDetailsHandler(saveNoteHandler))
+    http.HandleFunc("/Note/", makeNoteIDHandler(noteDetailsHandler))
+    http.HandleFunc("/SaveNote/", makeNoteIDHandler(saveNoteHandler))
+    http.HandleFunc("/ConfirmDeleteNote/", makeNoteIDHandler(confirmDeleteNoteHandler))
+    http.HandleFunc("/DeleteNote/", makeNoteIDHandler(deleteNoteHandler))
 
     err := dbManager.Open()
     

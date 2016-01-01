@@ -39,6 +39,10 @@ const UPDATE_NOTE_EXEC =
     `update notes 
      set title = ?, text = ?, changeDate = ?
      where noteID = ?;`
+     
+const DELETE_NOTE_EXEC = 
+    `delete from notes 
+     where noteID = ?;`
 
 type DatabaseManager struct {
     notes []note.Note
@@ -149,22 +153,47 @@ func (dbm *DatabaseManager) AddNote(n note.Note) error {
 }
 
 func (dbm *DatabaseManager) UpdateNote(n note.Note) error {
-        transaction, err := dbm.db.Begin()
+    transaction, err := dbm.db.Begin()
 	if err != nil {
         log.Printf("%q: %s\n", err, "Initializing update transaction.")
         return err
 	}
 	
-    stmt, err := transaction.Prepare(UPDATE_NOTE_EXEC)
+    updateStatement, err := transaction.Prepare(UPDATE_NOTE_EXEC)
 	if err != nil {
         log.Printf("%q: %s\n", err, "Preparing update transaction.")
         return err
 	}
-	defer stmt.Close()
+	defer updateStatement.Close()
 	
-    _, err = stmt.Exec(n.Title(), n.Text(), toSQLiteDateTimeString(n.ChangeDate()), strconv.Itoa(n.NoteID()))
+    _, err = updateStatement.Exec(n.Title(), n.Text(), toSQLiteDateTimeString(n.ChangeDate()), strconv.Itoa(n.NoteID()))
     if err != nil {
         log.Printf("%q: %s\n", err, "Update note in update transaction.")
+        return err
+    }
+    
+	transaction.Commit()
+    
+    return err
+}
+
+func (dbm *DatabaseManager) DeleteNote(noteID int) error {
+    transaction, err := dbm.db.Begin()
+	if err != nil {
+        log.Printf("%q: %s\n", err, "Initializing delete transaction.")
+        return err
+	}
+	
+    deleteStatement, err := transaction.Prepare(DELETE_NOTE_EXEC)
+	if err != nil {
+        log.Printf("%q: %s\n", err, "Preparing delete transaction.")
+        return err
+	}
+	defer deleteStatement.Close()
+	
+    _, err = deleteStatement.Exec(strconv.Itoa(noteID))
+    if err != nil {
+        log.Printf("%q: %s\n", err, "Update note in delete transaction.")
         return err
     }
     
