@@ -30,10 +30,26 @@ func partialHtmlParser(text string) template.HTML {
     var links []string = xurls.Relaxed.FindAllString(text, -1)
     sort.Strings(links)
     
-    printf()
+    var uniqueLinks []string
     
-    var lines []string = strings.Split(text, "\n")
-    
+    var currentLink string = ""
+    for _, link := range links {
+        if(currentLink != link) {
+            currentLink = link
+            uniqueLinks = append(uniqueLinks, currentLink)
+        }
+    }
+
+    var replaceLinkPairs []string
+    for _, link := range uniqueLinks {
+        replaceLinkPairs = append(replaceLinkPairs, link)
+        replaceLinkPairs = append(replaceLinkPairs, "<a href=" + link + ">" + link + "</a>")
+    }
+
+	replacer := strings.NewReplacer(replaceLinkPairs...)
+    var newText string = replacer.Replace(text)
+
+    var lines []string = strings.Split(newText, "\n")
     return template.HTML("<div>" + strings.Join(lines, "</div>\n<div>") + "</div>")
 }
 
@@ -109,7 +125,7 @@ func noteDetailsHandler(writer http.ResponseWriter, request *http.Request, noteI
         return
 	}
         
-	err = templates.ExecuteTemplate(writer, "Note.html", noteToHtmlNote(foundNote))
+	err = templates.ExecuteTemplate(writer, "Note.html", foundNote)
 	if err != nil {
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
         return
@@ -160,7 +176,7 @@ func confirmDeleteNoteHandler(writer http.ResponseWriter, request *http.Request,
         return
 	}
         
-	err = templates.ExecuteTemplate(writer, "DeleteNote.html", noteToHtmlNote(foundNote))
+	err = templates.ExecuteTemplate(writer, "DeleteNote.html", foundNote)
 	if err != nil {
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
         return
@@ -187,7 +203,7 @@ func confirmPasteBinNoteHandler(writer http.ResponseWriter, request *http.Reques
         return
 	}
         
-	err = templates.ExecuteTemplate(writer, "PasteBinNote.html", noteToHtmlNote(foundNote))
+	err = templates.ExecuteTemplate(writer, "PasteBinNote.html", foundNote)
 	if err != nil {
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
         return
