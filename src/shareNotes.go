@@ -1,7 +1,8 @@
 package main
 
 import (
-    //"fmt"
+    "os/exec"
+    "fmt"
     "html/template"
     "net/http"
     "regexp"
@@ -9,6 +10,7 @@ import (
     "database/manager"
     "note"
     "log"
+    "bytes"
 )
 
 type htmlTable struct {
@@ -142,7 +144,36 @@ func deleteNoteHandler(writer http.ResponseWriter, request *http.Request, noteID
     http.Redirect(writer, request, "/", http.StatusFound)
 }
 
-var validPath = regexp.MustCompile("^/(Note|SaveNote|ConfirmDeleteNote|DeleteNote)/([0-9]+)$")
+func pasteBinNoteHandler(writer http.ResponseWriter, request *http.Request, noteID int) {
+    var err error
+    var foundNote note.Note
+
+    foundNote, err = dbManager.GetNote(noteID)
+    if err != nil {
+		http.Error(writer, err.Error(), http.StatusInternalServerError)
+        return
+	}
+    
+    shellCommand := exec.Command("curl", 
+        "-s", 
+        "-F", fmt.Sprintf("content=%s", foundNote.Text()), 
+        "-F", fmt.Sprintf("title=\"%s (ID:%d)\"",foundNote.Title(),foundNote.NoteID()), 
+        "http://dpaste.com/api/v2/")
+    
+	var output bytes.Buffer
+	shellCommand.Stdout = &output
+	err = shellCommand.Run()
+	if err != nil {
+		http.Error(writer, err.Error(), http.StatusInternalServerError)
+        return
+	}
+    
+    fmt.Println(output.String())
+    
+    http.Redirect(writer, request, output.String(), http.StatusFound)
+}
+
+var validPath = regexp.MustCompile("^/(Note|SaveNote|ConfirmDeleteNote|DeleteNote|PasteBinNote)/([0-9]+)$")
 
 func makeNoteIDHandler(function func(http.ResponseWriter, *http.Request, int)) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
@@ -164,6 +195,7 @@ func main() {
     http.HandleFunc("/SaveNote/", makeNoteIDHandler(saveNoteHandler))
     http.HandleFunc("/ConfirmDeleteNote/", makeNoteIDHandler(confirmDeleteNoteHandler))
     http.HandleFunc("/DeleteNote/", makeNoteIDHandler(deleteNoteHandler))
+    http.HandleFunc("/PasteBinNote/", makeNoteIDHandler(pasteBinNoteHandler))
 
     err := dbManager.Open()
     
