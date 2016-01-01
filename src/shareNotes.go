@@ -19,7 +19,7 @@ type htmlTable struct {
 
 var dbManager = manager.New()
 
-var templates = template.Must(template.ParseFiles("index.html", "AddNote.html", "Note.html", "DeleteNote.html"))
+var templates = template.Must(template.ParseFiles("index.html", "AddNote.html", "Note.html", "DeleteNote.html", "PasteBinNote.html"))
 
 func indexHandler(writer http.ResponseWriter, request *http.Request) {    
     var err error
@@ -144,6 +144,23 @@ func deleteNoteHandler(writer http.ResponseWriter, request *http.Request, noteID
     http.Redirect(writer, request, "/", http.StatusFound)
 }
 
+func confirmPasteBinNoteHandler(writer http.ResponseWriter, request *http.Request, noteID int) {
+    var err error
+    var foundNote note.Note
+
+    foundNote, err = dbManager.GetNote(noteID)
+    if err != nil {
+		http.Error(writer, err.Error(), http.StatusInternalServerError)
+        return
+	}
+        
+	err = templates.ExecuteTemplate(writer, "PasteBinNote.html", foundNote)
+	if err != nil {
+		http.Error(writer, err.Error(), http.StatusInternalServerError)
+        return
+	}
+}
+
 func pasteBinNoteHandler(writer http.ResponseWriter, request *http.Request, noteID int) {
     var err error
     var foundNote note.Note
@@ -173,7 +190,7 @@ func pasteBinNoteHandler(writer http.ResponseWriter, request *http.Request, note
     http.Redirect(writer, request, output.String(), http.StatusFound)
 }
 
-var validPath = regexp.MustCompile("^/(Note|SaveNote|ConfirmDeleteNote|DeleteNote|PasteBinNote)/([0-9]+)$")
+var validPath = regexp.MustCompile("^/(Note|SaveNote|ConfirmDeleteNote|DeleteNote|PasteBinNote|ConfirmPasteBinNote)/([0-9]+)$")
 
 func makeNoteIDHandler(function func(http.ResponseWriter, *http.Request, int)) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
@@ -195,6 +212,7 @@ func main() {
     http.HandleFunc("/SaveNote/", makeNoteIDHandler(saveNoteHandler))
     http.HandleFunc("/ConfirmDeleteNote/", makeNoteIDHandler(confirmDeleteNoteHandler))
     http.HandleFunc("/DeleteNote/", makeNoteIDHandler(deleteNoteHandler))
+    http.HandleFunc("/ConfirmPasteBinNote/", makeNoteIDHandler(confirmPasteBinNoteHandler))
     http.HandleFunc("/PasteBinNote/", makeNoteIDHandler(pasteBinNoteHandler))
 
     err := dbManager.Open()
