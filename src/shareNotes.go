@@ -38,7 +38,18 @@ func partialHtmlParser(text string) template.HTML {
 
 		for len(links) > 0 {
 			if strings.HasPrefix(restText, currentLink) {
-				newText = newText + "<a href=" + currentLink + ">" + currentLink + "</a>"
+                if strings.Contains(currentLink, "http://") ||
+                   strings.Contains(currentLink, "bitcoin://") ||
+                   strings.Contains(currentLink, "file://") ||
+                   strings.Contains(currentLink, "magnet://") ||
+                   strings.Contains(currentLink, "mailto://") ||
+                   strings.Contains(currentLink, "sms://") ||
+                   strings.Contains(currentLink, "tel://") ||
+                   strings.Contains(currentLink, "smp://") {
+                    newText = newText + "<a href=" + currentLink + " target=_new>" + currentLink + "</a>"
+                } else {
+                    newText = newText + "<a href=http://" + currentLink + " target=_new>" + currentLink + "</a>"
+                }
 				restText = restText[len(currentLink):len(restText)]
 				if len(links) > 1 {
 					links = links[1:len(links)]

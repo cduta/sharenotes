@@ -12,8 +12,8 @@
 <h1><b>{{.Title}}</b> (ID: {{.NoteID}})</h1>
 
 <form action="/SaveNote/{{.NoteID}}" method="POST">
-    <div><input name="title" rows="1" cols="50" value={{.Title}}></div>
-    <div><textarea name="text" rows="20" cols="80">{{.Text}}</textarea></div>
+    <div><input name="title" rows="1" cols="50" placeholder="Title" value={{.Title}}></div>
+    <div><textarea name="text" rows="20" cols="80" placeholder="Text">{{.Text}}</textarea></div>
     <div>
         <input type="submit" value="Save" class="btn btn-success btn-md" value="Submit Button"> 
         <a href="/ConfirmPasteBinNote/{{.NoteID}}" class="btn btn-warning btn-md" role="button" target="_new">dPaste</a> 

@@ -11,8 +11,10 @@
 <body>
 
 <div class="container">
-  <div>
-    <h2>ShareNotes</h2>
+  <div class="page-header">
+    <h2>
+      ShareNotes
+    </h2>
   </div>
   <table class="table table-condensed table-striped table-hover">
     <tbody>
@@ -21,6 +23,16 @@
             <a href="/AddNote/" class="btn btn-info btn-md" role="button" target="_top">Add Note...</a>
           </td>
           <td>
+            <div class="dropdown">
+              <button class="btn btn-default dropdown-toggle btn-md" type="button" data-toggle="dropdown">Apply filter for...
+              <span class="caret"></span></button>
+              <ul class="dropdown-menu">
+                <li><a href="#">Title</a></li>
+                <li><a href="#">Text</a></li>
+                <li><a href="#">Both</a></li>
+              </ul>
+              <input name="title" rows="1" cols="50" placeholder="Filter...">
+            </div>
           </td>
         </tr>
         {{range .Notes}}
