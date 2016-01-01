@@ -10,6 +10,44 @@
 </head>
 <body>
 
+<script>
+  function titleFilter() {
+    "use strict";
+    var filterText = document.getElementById("sharenotes_filter_text_input_field").value;
+    
+    if(filterText == "")
+    {
+      return;
+    }
+      
+    window.open("/TitleFilter/" + filterText, "_self");
+  }
+  
+  function textFilter() {
+    "use strict";
+    var filterText = document.getElementById("sharenotes_filter_text_input_field").value;
+    
+    if(filterText == "")
+    {
+      return;
+    }
+    
+    window.open("/TextFilter/" + filterText, "_self")
+  }
+  
+  function bothFilter() {
+    "use strict";
+    var filterText = document.getElementById("sharenotes_filter_text_input_field").value;
+    
+    if(filterText == "")
+    {
+      return;
+    }
+    
+    window.open("/BothFilter/" + filterText, "_self")
+  }
+</script>
+
 <div class="container">
   <div class="page-header">
     <h2>
@@ -27,17 +65,12 @@
               <button class="btn btn-default dropdown-toggle btn-md" type="button" data-toggle="dropdown">Apply filter for...
               <span class="caret"></span></button>
               <ul class="dropdown-menu">
-                <li>
-                  <button class="btn btn-default btn-sm" type="button">Title</button>
-                </li>
-                <li>
-                  <button class="btn btn-default btn-md" type="button">Text</button>
-                </li>
-                <li>
-                  <button class="btn btn-default btn-md" type="button">Both</button>
-                </li>
+                <li><a href="#" onclick="titleFilter();">Title</a></li>
+                <li><a href="#" onclick="textFilter();">Text</a></li>
+                <li><a href="#" onclick="bothFilter();">Both</a></li>
               </ul>
-              <input name="title" rows="1" cols="50" placeholder="Filter...">
+              <input name="FilterText" id="sharenotes_filter_text_input_field" rows="1" cols="50" placeholder="Filter...">
+              <a href="/" class="btn btn-default btn-md" role="button" target="_top">Back</a>
             </div>
           </td>
         </tr>
