@@ -1,7 +1,7 @@
 package note
 
 import (
-        "time"
+    "time"
 )
 
 type Note struct {

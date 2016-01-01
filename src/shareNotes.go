@@ -11,10 +11,35 @@ import (
     "note"
     "log"
     "bytes"
+    "strings"
+    "github.com/mvdan/xurls"
+    "sort"
 )
 
 type htmlTable struct {
-    Notes []note.Note
+    Notes []htmlNote
+}
+
+type htmlNote struct {
+    NoteID int
+    Title string
+    Text template.HTML
+}
+
+func partialHtmlParser(text string) template.HTML {
+    var links []string = xurls.Relaxed.FindAllString(text, -1)
+    sort.Strings(links)    
+    
+    var lines []string = strings.Split(text, "\n")
+    
+    return template.HTML("<div>" + strings.Join(lines, "</div>\n<div>") + "</div>")
+}
+
+func noteToHtmlNote(note note.Note) htmlNote {
+    return htmlNote{
+        NoteID: note.NoteID(),
+        Title: note.Title(),
+        Text: partialHtmlParser(note.Text())}
 }
 
 var dbManager = manager.New()
@@ -31,7 +56,13 @@ func indexHandler(writer http.ResponseWriter, request *http.Request) {
         return
 	}
     
-    table := htmlTable{Notes : notes }
+    var htmlNotes []htmlNote
+    
+    for _, n := range notes {
+        htmlNotes = append(htmlNotes, noteToHtmlNote(n))
+    }
+    
+    table := htmlTable{Notes : htmlNotes }
     
 	err = templates.ExecuteTemplate(writer, "index.html", table)
 	if err != nil {

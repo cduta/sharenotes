@@ -73,7 +73,6 @@ func (dbm *DatabaseManager) checkDBValidity() error {
             var addDate time.Time
             var changeDate time.Time
             rows.Scan(&noteID, &title, &text, &addDate, &changeDate)
-            fmt.Println(noteID, title, text, addDate, changeDate)
         }
     }
     
