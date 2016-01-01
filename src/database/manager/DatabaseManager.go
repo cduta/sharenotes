@@ -48,7 +48,7 @@ func (dbm *DatabaseManager) checkDBValidity() error {
     rows, err := dbm.db.Query(SELECT_NOTES_QS)
     
 	if err != nil {
-		log.Printf("%q: %s\n", err, "Recreating the database.")
+		log.Printf("%q: %s\n", err, "Rebuilding the database...")
 	} else {    
         defer rows.Close()
         for rows.Next() {
