@@ -13,7 +13,6 @@ import (
     "bytes"
     "strings"
     "github.com/mvdan/xurls"
-    "sort"
 )
 
 type htmlTable struct {
@@ -28,26 +27,36 @@ type htmlNote struct {
 
 func partialHtmlParser(text string) template.HTML {
     var links []string = xurls.Relaxed.FindAllString(text, -1)
-    sort.Strings(links)
+    var newText string = ""
+    var restText string = text
     
-    var uniqueLinks []string
-    
-    var currentLink string = ""
-    for _, link := range links {
-        if(currentLink != link) {
-            currentLink = link
-            uniqueLinks = append(uniqueLinks, currentLink)
+    if len(links) > 0 {        
+        currentLink := links[0]
+        
+        for len(links) > 0 {
+            if strings.HasPrefix(restText, currentLink) {
+                newText = newText + "<a href=" + currentLink + ">" + currentLink + "</a>"
+                restText = restText[len(currentLink):len(restText)]
+                if len(links) > 1 {
+                    links = links[1:len(links)]
+                    currentLink = links[0]
+                } else if len(links) == 1 {
+                    currentLink = links[0]
+                    links = links[0:0]
+                } 
+            }
+            
+            if(len(restText) > 1) {
+                newText = newText + restText[0:1]
+                restText = restText[1:len(restText)]
+            } else if len(restText) == 1 {
+                newText = newText + restText[0:1]
+                restText = restText[0:0]
+            }
         }
+    } else {
+        newText = restText
     }
-
-    var replaceLinkPairs []string
-    for _, link := range uniqueLinks {
-        replaceLinkPairs = append(replaceLinkPairs, link)
-        replaceLinkPairs = append(replaceLinkPairs, "<a href=" + link + ">" + link + "</a>")
-    }
-
-	replacer := strings.NewReplacer(replaceLinkPairs...)
-    var newText string = replacer.Replace(text)
 
     var lines []string = strings.Split(newText, "\n")
     return template.HTML("<div>" + strings.Join(lines, "</div>\n<div>") + "</div>")
