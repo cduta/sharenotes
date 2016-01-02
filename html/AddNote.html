@@ -9,12 +9,10 @@
   <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
 </head>
 <body>
-<h1>Add Note</h1>
-
 <form action="/NewNote/" method="POST">
     <div hidden><input value={{.Token.ID}} name="share_note_token_id"></input></div>
     <div hidden><input value={{.Token.TokenString}} name="share_note_token_string"></input></div>
-    <div><input name="title" rows="1" cols="50" placeholder="Title"></input></div>
+    <h1><input name="title" rows="1" cols="50" placeholder="Title"></input> Add Note</h1>
     <div><textarea name="text" rows="20" cols="80" placeholder="Text"></textarea></div>
     <div>
       <input type="submit" value="Add" class="btn btn-success btn-md" value="Submit Button">

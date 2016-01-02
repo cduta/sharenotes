@@ -229,12 +229,12 @@ func noteDetailsHandler(writer http.ResponseWriter, request *http.Request, noteI
 	}
 }
 
-type editNoteData struct {
+type confirmNoteData struct {
         Note note.Note
         Token synchronizedToken
 }
 
-func editNoteHandler(writer http.ResponseWriter, request *http.Request, noteID int) {
+func preparePostHandler(writer http.ResponseWriter, request *http.Request, urlName string, noteID int) {
 	var err error
 	var foundNote note.Note
 
@@ -244,7 +244,7 @@ func editNoteHandler(writer http.ResponseWriter, request *http.Request, noteID i
 		return
 	}
 
-	err = templates.ExecuteTemplate(writer, "EditNote.html", editNoteData{Note: foundNote, Token: sidManager.generateSynchronizedToken()})
+	err = templates.ExecuteTemplate(writer, urlName + ".html", confirmNoteData{Note: foundNote, Token: sidManager.generateSynchronizedToken()})
 	if err != nil {
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 		return
@@ -297,26 +297,23 @@ func saveNoteHandler(writer http.ResponseWriter, request *http.Request, noteID i
 	http.Redirect(writer, request, fmt.Sprintf("/Note/%d", noteID), http.StatusFound)
 }
 
-func confirmDeleteNoteHandler(writer http.ResponseWriter, request *http.Request, noteID int) {
-	var err error
-	var foundNote note.Note
-
-	foundNote, err = dbManager.GetNote(noteID)
-	if err != nil {
-		http.Error(writer, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	err = templates.ExecuteTemplate(writer, "DeleteNote.html", foundNote)
-	if err != nil {
-		http.Error(writer, err.Error(), http.StatusInternalServerError)
-		return
-	}
-}
-
-// Needs Butts
 func deleteNoteHandler(writer http.ResponseWriter, request *http.Request, noteID int) {
-	err := dbManager.DeleteNote(noteID)
+	tokenID := request.FormValue("share_note_token_id")
+        tokenString := request.FormValue("share_note_token_string")
+        
+        id, err := strconv.ParseUint(tokenID, 10, 64)
+        
+        if err != nil {
+		http.Error(writer, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+        if !sidManager.synchronizedTokenIsValid(synchronizedToken{ID: id, TokenString: tokenString}) {
+                http.Error(writer, "Token was invlaid.", http.StatusInternalServerError)
+                return
+        }
+        
+        err = dbManager.DeleteNote(noteID)
 	if err != nil {
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 		return
@@ -325,27 +322,24 @@ func deleteNoteHandler(writer http.ResponseWriter, request *http.Request, noteID
 	http.Redirect(writer, request, "/", http.StatusFound)
 }
 
-func confirmPasteBinNoteHandler(writer http.ResponseWriter, request *http.Request, noteID int) {
-	var err error
-	var foundNote note.Note
-
-	foundNote, err = dbManager.GetNote(noteID)
-	if err != nil {
-		http.Error(writer, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	err = templates.ExecuteTemplate(writer, "PasteBinNote.html", foundNote)
-	if err != nil {
-		http.Error(writer, err.Error(), http.StatusInternalServerError)
-		return
-	}
-}
-
-// Needs Butts
 func pasteBinNoteHandler(writer http.ResponseWriter, request *http.Request, noteID int) {
 	var err error
 	var foundNote note.Note
+
+        tokenID := request.FormValue("share_note_token_id")
+        tokenString := request.FormValue("share_note_token_string")
+        
+        id, err := strconv.ParseUint(tokenID, 10, 64)
+        
+        if err != nil {
+		http.Error(writer, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+        if !sidManager.synchronizedTokenIsValid(synchronizedToken{ID: id, TokenString: tokenString}) {
+                http.Error(writer, "Invalid post request..", http.StatusInternalServerError)
+                return
+        }
 
 	foundNote, err = dbManager.GetNote(noteID)
 	if err != nil {
@@ -434,7 +428,7 @@ func bothFilterHandler(writer http.ResponseWriter, request *http.Request, filter
 	filteredIndexHandler2(writer, request, manager.SELECT_NOTES_WHERE_BOTH_QS, filterInput)
 }
 
-var validPath = regexp.MustCompile("^/(Note|EditNote|SaveNote|ConfirmDeleteNote|DeleteNote|PasteBinNote|ConfirmPasteBinNote)/([0-9]+)$")
+var validPath = regexp.MustCompile("^/(Note|ConfirmDeleteNote|SaveNote|ConfirmPasteBinNote)/([0-9]+)$")
 
 func makeNoteIDHandler(function func(http.ResponseWriter, *http.Request, int)) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
@@ -461,17 +455,33 @@ func makeFilterHandler(function func(http.ResponseWriter, *http.Request, string)
 	}
 }
 
+var validPreparePostPath = regexp.MustCompile("^/(DeleteNote|EditNote|PasteBinNote)/([0-9]+)$")
+
+func makePreparePostHandler(function func(http.ResponseWriter, *http.Request, string, int)) http.HandlerFunc {
+	return func(writer http.ResponseWriter, request *http.Request) {
+		urlTokens := validPreparePostPath.FindStringSubmatch(request.URL.Path)
+		if urlTokens == nil {
+			http.NotFound(writer, request)
+			return
+		}
+		id, _ := strconv.Atoi(urlTokens[2])
+		function(writer, request, urlTokens[1], id)
+	}
+}
+
 func main() {
 	http.HandleFunc("/", indexHandler)
 	http.HandleFunc("/AddNote/", addNoteHandler)
 	http.HandleFunc("/NewNote/", newNoteHandler)
+        
+        http.HandleFunc("/EditNote/", makePreparePostHandler(preparePostHandler))
+	http.HandleFunc("/DeleteNote/", makePreparePostHandler(preparePostHandler))
+	http.HandleFunc("/PasteBinNote/", makePreparePostHandler(preparePostHandler))
+        
 	http.HandleFunc("/Note/", makeNoteIDHandler(noteDetailsHandler))
-	http.HandleFunc("/EditNote/", makeNoteIDHandler(editNoteHandler))
 	http.HandleFunc("/SaveNote/", makeNoteIDHandler(saveNoteHandler))
-	http.HandleFunc("/ConfirmDeleteNote/", makeNoteIDHandler(confirmDeleteNoteHandler))
-	http.HandleFunc("/DeleteNote/", makeNoteIDHandler(deleteNoteHandler))
-	http.HandleFunc("/ConfirmPasteBinNote/", makeNoteIDHandler(confirmPasteBinNoteHandler))
-	http.HandleFunc("/PasteBinNote/", makeNoteIDHandler(pasteBinNoteHandler))
+	http.HandleFunc("/ConfirmDeleteNote/", makeNoteIDHandler(deleteNoteHandler))
+	http.HandleFunc("/ConfirmPasteBinNote/", makeNoteIDHandler(pasteBinNoteHandler))
 	http.HandleFunc("/TitleFilter/", makeFilterHandler(titleFilterHandler))
 	http.HandleFunc("/TextFilter/", makeFilterHandler(textFilterHandler))
 	http.HandleFunc("/BothFilter/", makeFilterHandler(bothFilterHandler))

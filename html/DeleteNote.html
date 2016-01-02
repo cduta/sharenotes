@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <title>Really delete {{.Title}} (ID: {{.NoteID}})?</title>
+  <title>Really delete {{.Note.Title}} (ID: {{.Note.NoteID}})?</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
@@ -9,10 +9,11 @@
   <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
 </head>
 <body>
-<h1>Really delete <b>{{.Title}}</b> (ID: {{.NoteID}})?</h1>
+<h1>Really delete <b>{{.Note.Title}}</b> (ID: {{.Note.NoteID}})?</h1>
 
-<form action="/DeleteNote/{{.NoteID}}" method="POST">
-    <div></div>
+<form action="/ConfirmDeleteNote/{{.Note.NoteID}}" method="POST">
+    <div hidden><input value={{.Token.ID}} name="share_note_token_id"></input></div>
+    <div hidden><input value={{.Token.TokenString}} name="share_note_token_string"></input></div>
     <div>
       <input type="submit" value="Delete" class="btn btn-danger btn-md" value="Submit Button">
       <a href="/" class="btn btn-default btn-md" role="button" target="_top">Cancel</a>
