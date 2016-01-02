@@ -13,19 +13,19 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-    "time"
+	"time"
 )
 
 type htmlTable struct {
-	Notes []htmlNote
-    Filtered bool
+	Notes    []htmlNote
+	Filtered bool
 }
 
 type htmlNote struct {
 	NoteID     int
 	Title      string
 	Text       template.HTML
-    AddDate    time.Time
+	AddDate    time.Time
 	ChangeDate time.Time
 }
 
@@ -39,18 +39,18 @@ func partialHtmlParser(text string) template.HTML {
 
 		for len(links) > 0 {
 			if strings.HasPrefix(restText, currentLink) {
-                if strings.Contains(currentLink, "http://") ||
-                   strings.Contains(currentLink, "bitcoin://") ||
-                   strings.Contains(currentLink, "file://") ||
-                   strings.Contains(currentLink, "magnet://") ||
-                   strings.Contains(currentLink, "mailto://") ||
-                   strings.Contains(currentLink, "sms://") ||
-                   strings.Contains(currentLink, "tel://") ||
-                   strings.Contains(currentLink, "smp://") {
-                    newText = newText + "<a href=" + currentLink + " target=_new>" + currentLink + "</a>"
-                } else {
-                    newText = newText + "<a href=http://" + currentLink + " target=_new>" + currentLink + "</a>"
-                }
+				if strings.Contains(currentLink, "http://") ||
+					strings.Contains(currentLink, "bitcoin://") ||
+					strings.Contains(currentLink, "file://") ||
+					strings.Contains(currentLink, "magnet://") ||
+					strings.Contains(currentLink, "mailto://") ||
+					strings.Contains(currentLink, "sms://") ||
+					strings.Contains(currentLink, "tel://") ||
+					strings.Contains(currentLink, "smp://") {
+					newText = newText + "<a href=" + currentLink + " target=_new>" + currentLink + "</a>"
+				} else {
+					newText = newText + "<a href=http://" + currentLink + " target=_new>" + currentLink + "</a>"
+				}
 				restText = restText[len(currentLink):len(restText)]
 				if len(links) > 1 {
 					links = links[1:len(links)]
@@ -82,8 +82,8 @@ func noteToHtmlNote(note note.Note) htmlNote {
 		NoteID:     note.NoteID(),
 		Title:      note.Title(),
 		Text:       partialHtmlParser(note.Text()),
-        AddDate:    note.AddDate(),
-        ChangeDate: note.ChangeDate()}
+		AddDate:    note.AddDate(),
+		ChangeDate: note.ChangeDate()}
 }
 
 var dbManager = manager.New()
@@ -208,7 +208,7 @@ func saveNoteHandler(writer http.ResponseWriter, request *http.Request, noteID i
 		}
 	}
 
-	http.Redirect(writer, request, fmt.Sprintf("/Note/%d",noteID), http.StatusFound)
+	http.Redirect(writer, request, fmt.Sprintf("/Note/%d", noteID), http.StatusFound)
 }
 
 func confirmDeleteNoteHandler(writer http.ResponseWriter, request *http.Request, noteID int) {
@@ -293,7 +293,7 @@ func filteredIndexHandler1(writer http.ResponseWriter, request *http.Request, wh
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 		return
 	}
-    
+
 	var htmlNotes []htmlNote
 
 	for _, n := range notes {
@@ -335,15 +335,15 @@ func filteredIndexHandler2(writer http.ResponseWriter, request *http.Request, wh
 }
 
 func titleFilterHandler(writer http.ResponseWriter, request *http.Request, filterInput string) {
-    filteredIndexHandler1(writer, request, manager.SELECT_NOTES_WHERE_TITLE_QS, filterInput)
+	filteredIndexHandler1(writer, request, manager.SELECT_NOTES_WHERE_TITLE_QS, filterInput)
 }
 
 func textFilterHandler(writer http.ResponseWriter, request *http.Request, filterInput string) {
-    filteredIndexHandler1(writer, request, manager.SELECT_NOTES_WHERE_TEXT_QS, filterInput)
+	filteredIndexHandler1(writer, request, manager.SELECT_NOTES_WHERE_TEXT_QS, filterInput)
 }
 
 func bothFilterHandler(writer http.ResponseWriter, request *http.Request, filterInput string) {
-    filteredIndexHandler2(writer, request, manager.SELECT_NOTES_WHERE_BOTH_QS, filterInput)
+	filteredIndexHandler2(writer, request, manager.SELECT_NOTES_WHERE_BOTH_QS, filterInput)
 }
 
 var validPath = regexp.MustCompile("^/(Note|EditNote|SaveNote|ConfirmDeleteNote|DeleteNote|PasteBinNote|ConfirmPasteBinNote)/([0-9]+)$")
@@ -378,15 +378,15 @@ func main() {
 	http.HandleFunc("/AddNote/", addNoteHandler)
 	http.HandleFunc("/NewNote/", newNoteHandler)
 	http.HandleFunc("/Note/", makeNoteIDHandler(noteDetailsHandler))
-    http.HandleFunc("/EditNote/", makeNoteIDHandler(editNoteHandler))
+	http.HandleFunc("/EditNote/", makeNoteIDHandler(editNoteHandler))
 	http.HandleFunc("/SaveNote/", makeNoteIDHandler(saveNoteHandler))
 	http.HandleFunc("/ConfirmDeleteNote/", makeNoteIDHandler(confirmDeleteNoteHandler))
 	http.HandleFunc("/DeleteNote/", makeNoteIDHandler(deleteNoteHandler))
 	http.HandleFunc("/ConfirmPasteBinNote/", makeNoteIDHandler(confirmPasteBinNoteHandler))
 	http.HandleFunc("/PasteBinNote/", makeNoteIDHandler(pasteBinNoteHandler))
-    http.HandleFunc("/TitleFilter/", makeFilterHandler(titleFilterHandler))
-    http.HandleFunc("/TextFilter/", makeFilterHandler(textFilterHandler))
-    http.HandleFunc("/BothFilter/", makeFilterHandler(bothFilterHandler))
+	http.HandleFunc("/TitleFilter/", makeFilterHandler(titleFilterHandler))
+	http.HandleFunc("/TextFilter/", makeFilterHandler(textFilterHandler))
+	http.HandleFunc("/BothFilter/", makeFilterHandler(bothFilterHandler))
 
 	err := dbManager.Open()
 

@@ -12,7 +12,7 @@ import (
 
 const DB_FILE_NAME = "sndb.db"
 
-const DATE_FORMAT = "1999-12-31 24:12:59";
+const DATE_FORMAT = "1999-12-31 24:12:59"
 
 const INITIALIZE_NOTES_TABLE_EXEC = `create table notes (
         noteID integer not null primary key, 
@@ -32,11 +32,11 @@ const LOOKUP_NOTE_QS = `select title, text, addDate, changeDate
 const SELECT_NOTES_WHERE_TITLE_QS = `select noteID, title, text, addDate, changeDate 
      from notes
      where title like ?`
-     
+
 const SELECT_NOTES_WHERE_TEXT_QS = `select noteID, title, text, addDate, changeDate 
      from notes
      where text like ?`
-     
+
 const SELECT_NOTES_WHERE_BOTH_QS = `select noteID, title, text, addDate, changeDate 
      from notes
      where title like ? or text like ?`
@@ -238,8 +238,8 @@ func (dbm *DatabaseManager) LoadNotesWhere1(whereClause string, filterText strin
 
 	defer whereQuery.Close()
 
-	rows, err := whereQuery.Query("%"+filterText+"%")
-    
+	rows, err := whereQuery.Query("%" + filterText + "%")
+
 	if err != nil {
 		log.Printf("%q: %s\n", err, "Query select notes where transaction.")
 	} else {
@@ -270,7 +270,7 @@ func (dbm *DatabaseManager) LoadNotesWhere2(whereClause string, filterText1 stri
 	defer whereQuery.Close()
 
 	rows, err := whereQuery.Query("%"+filterText1+"%", "%"+filterText2+"%")
-    
+
 	if err != nil {
 		log.Printf("%q: %s\n", err, "Query select notes where transaction.")
 	} else {
@@ -310,5 +310,5 @@ func (dbm *DatabaseManager) GetNote(noteID int) (note.Note, error) {
 		return note.Note{}, err
 	}
 
-	return note.NewLocal(noteID, title, text, time.Unix(addDate,0), time.Unix(changeDate, 0)), err
+	return note.NewLocal(noteID, title, text, time.Unix(addDate, 0), time.Unix(changeDate, 0)), err
 }
