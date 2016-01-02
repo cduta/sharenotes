@@ -280,7 +280,7 @@ func pasteBinNoteHandler(writer http.ResponseWriter, request *http.Request, note
 		return
 	}
 
-	fmt.Println(output.String())
+        log.Printf(output.String())
 
 	http.Redirect(writer, request, output.String(), http.StatusFound)
 }
