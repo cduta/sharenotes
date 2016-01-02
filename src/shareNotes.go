@@ -511,9 +511,6 @@ var lastRequestTime int64 = math.MinInt64
 func tooManyRequests() bool {
         var currentTime int64 = time.Now().UnixNano()
         
-        fmt.Println(fmt.Sprintf("Last there: %d ns", lastRequestTime))
-        fmt.Println(fmt.Sprintf("Current there: %d ns", currentTime))
-        
         if lastRequestTime > math.MinInt64 && currentTime - lastRequestTime <= TOO_MANY_REQUEST_TIME_SPAN_IN_NS {
                 return true
         }
