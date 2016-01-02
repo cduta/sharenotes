@@ -15,7 +15,10 @@ import (
 	"strings"
 	"time"
         "math/rand"
+        "math"
 )
+
+const TOO_MANY_REQUEST_TIME_SPAN_IN_NS = int64(1000)
 
 type synchronizedToken struct {
         ID          uint64
@@ -428,11 +431,16 @@ func bothFilterHandler(writer http.ResponseWriter, request *http.Request, filter
 	filteredIndexHandler2(writer, request, manager.SELECT_NOTES_WHERE_BOTH_QS, filterInput)
 }
 
-var validPath = regexp.MustCompile("^/(Note|ConfirmDeleteNote|SaveNote|ConfirmPasteBinNote)/([0-9]+)$")
+var validNotePath = regexp.MustCompile("^/(Note|ConfirmDeleteNote|SaveNote|ConfirmPasteBinNote)/([0-9]+)$")
 
 func makeNoteIDHandler(function func(http.ResponseWriter, *http.Request, int)) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
-		urlTokens := validPath.FindStringSubmatch(request.URL.Path)
+                if tooManyRequests() {
+                        http.Error(writer, "Slow down, buddy!", 429)
+                        return
+                }
+                
+		urlTokens := validNotePath.FindStringSubmatch(request.URL.Path)
 		if urlTokens == nil {
 			http.NotFound(writer, request)
 			return
@@ -446,6 +454,11 @@ var validFilterPath = regexp.MustCompile("^/(Title|Text|Both)Filter/([0-9a-zA-Z]
 
 func makeFilterHandler(function func(http.ResponseWriter, *http.Request, string)) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
+                if tooManyRequests() {
+                        http.Error(writer, "Slow down, buddy!", 429)
+                        return
+                }
+                
 		urlTokens := validFilterPath.FindStringSubmatch(request.URL.Path)
 		if urlTokens == nil {
 			http.NotFound(writer, request)
@@ -459,6 +472,11 @@ var validPreparePostPath = regexp.MustCompile("^/(DeleteNote|EditNote|PasteBinNo
 
 func makePreparePostHandler(function func(http.ResponseWriter, *http.Request, string, int)) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
+                if tooManyRequests() {
+                        http.Error(writer, "Slow down, buddy!", 429)
+                        return
+                }
+                
 		urlTokens := validPreparePostPath.FindStringSubmatch(request.URL.Path)
 		if urlTokens == nil {
 			http.NotFound(writer, request)
@@ -469,10 +487,45 @@ func makePreparePostHandler(function func(http.ResponseWriter, *http.Request, st
 	}
 }
 
+var validPath = regexp.MustCompile("(^/(AddNote|NewNote)/$|/)")
+
+func makeHandler(function func(http.ResponseWriter, *http.Request)) http.HandlerFunc {
+	return func(writer http.ResponseWriter, request *http.Request) {
+                if tooManyRequests() {
+                        http.Error(writer, "Slow down, buddy!", 429)
+                        return
+                }
+                
+		urlTokens := validPath.FindStringSubmatch(request.URL.Path)
+		if urlTokens == nil {
+			http.NotFound(writer, request)
+			return
+		}
+                
+		function(writer, request)
+	}
+}
+
+var lastRequestTime int64 = math.MinInt64
+
+func tooManyRequests() bool {
+        var currentTime int64 = time.Now().UnixNano()
+        
+        fmt.Println(fmt.Sprintf("Last there: %d ns", lastRequestTime))
+        fmt.Println(fmt.Sprintf("Current there: %d ns", currentTime))
+        
+        if lastRequestTime > math.MinInt64 && currentTime - lastRequestTime <= TOO_MANY_REQUEST_TIME_SPAN_IN_NS {
+                return true
+        }
+        
+        lastRequestTime = currentTime
+        return false
+}
+
 func main() {
-	http.HandleFunc("/", indexHandler)
-	http.HandleFunc("/AddNote/", addNoteHandler)
-	http.HandleFunc("/NewNote/", newNoteHandler)
+	http.HandleFunc("/", makeHandler(indexHandler))
+	http.HandleFunc("/AddNote/", makeHandler(addNoteHandler))
+	http.HandleFunc("/NewNote/", makeHandler(newNoteHandler))
         
         http.HandleFunc("/EditNote/", makePreparePostHandler(preparePostHandler))
 	http.HandleFunc("/DeleteNote/", makePreparePostHandler(preparePostHandler))
@@ -482,6 +535,7 @@ func main() {
 	http.HandleFunc("/SaveNote/", makeNoteIDHandler(saveNoteHandler))
 	http.HandleFunc("/ConfirmDeleteNote/", makeNoteIDHandler(deleteNoteHandler))
 	http.HandleFunc("/ConfirmPasteBinNote/", makeNoteIDHandler(pasteBinNoteHandler))
+        
 	http.HandleFunc("/TitleFilter/", makeFilterHandler(titleFilterHandler))
 	http.HandleFunc("/TextFilter/", makeFilterHandler(textFilterHandler))
 	http.HandleFunc("/BothFilter/", makeFilterHandler(bothFilterHandler))
