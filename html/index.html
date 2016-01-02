@@ -70,7 +70,9 @@
                 <li><a href="#" onclick="bothFilter();">Both</a></li>
               </ul>
               <input name="FilterText" id="sharenotes_filter_text_input_field" rows="1" cols="50" placeholder="Filter...">
-              <a href="/" class="btn btn-default btn-md" role="button" target="_top">Back</a>
+              {{if .Filtered}}
+                <a href="/" class="btn btn-default btn-md" role="button" target="_top">Cancel</a>
+              {{end}}
             </div>
           </td>
         </tr>
@@ -93,7 +95,7 @@
             <td>
             </td>
             <td>
-              No notes yet... 
+              No notes... 
             </td>
           </tr>
         {{end}}

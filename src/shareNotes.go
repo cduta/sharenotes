@@ -18,6 +18,7 @@ import (
 
 type htmlTable struct {
 	Notes []htmlNote
+    Filtered bool
 }
 
 type htmlNote struct {
@@ -105,7 +106,7 @@ func indexHandler(writer http.ResponseWriter, request *http.Request) {
 		htmlNotes = append(htmlNotes, noteToHtmlNote(n))
 	}
 
-	table := htmlTable{Notes: htmlNotes}
+	table := htmlTable{Notes: htmlNotes, Filtered: false}
 
 	err = templates.ExecuteTemplate(writer, "index.html", table)
 	if err != nil {
@@ -283,6 +284,68 @@ func pasteBinNoteHandler(writer http.ResponseWriter, request *http.Request, note
 	http.Redirect(writer, request, output.String(), http.StatusFound)
 }
 
+func filteredIndexHandler1(writer http.ResponseWriter, request *http.Request, whereClause string, filterText string) {
+	var err error
+	var notes []note.Note
+	notes, err = dbManager.LoadNotesWhere1(whereClause, filterText)
+
+	if err != nil {
+		http.Error(writer, err.Error(), http.StatusInternalServerError)
+		return
+	}
+    
+	var htmlNotes []htmlNote
+
+	for _, n := range notes {
+		htmlNotes = append(htmlNotes, noteToHtmlNote(n))
+	}
+
+	table := htmlTable{Notes: htmlNotes, Filtered: true}
+
+	err = templates.ExecuteTemplate(writer, "index.html", table)
+	if err != nil {
+		http.Error(writer, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func filteredIndexHandler2(writer http.ResponseWriter, request *http.Request, whereClause string, filterText string) {
+	var err error
+	var notes []note.Note
+	notes, err = dbManager.LoadNotesWhere2(whereClause, filterText, filterText)
+
+	if err != nil {
+		http.Error(writer, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var htmlNotes []htmlNote
+
+	for _, n := range notes {
+		htmlNotes = append(htmlNotes, noteToHtmlNote(n))
+	}
+
+	table := htmlTable{Notes: htmlNotes, Filtered: true}
+
+	err = templates.ExecuteTemplate(writer, "index.html", table)
+	if err != nil {
+		http.Error(writer, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func titleFilterHandler(writer http.ResponseWriter, request *http.Request, filterInput string) {
+    filteredIndexHandler1(writer, request, manager.SELECT_NOTES_WHERE_TITLE_QS, filterInput)
+}
+
+func textFilterHandler(writer http.ResponseWriter, request *http.Request, filterInput string) {
+    filteredIndexHandler1(writer, request, manager.SELECT_NOTES_WHERE_TEXT_QS, filterInput)
+}
+
+func bothFilterHandler(writer http.ResponseWriter, request *http.Request, filterInput string) {
+    filteredIndexHandler2(writer, request, manager.SELECT_NOTES_WHERE_BOTH_QS, filterInput)
+}
+
 var validPath = regexp.MustCompile("^/(Note|EditNote|SaveNote|ConfirmDeleteNote|DeleteNote|PasteBinNote|ConfirmPasteBinNote)/([0-9]+)$")
 
 func makeNoteIDHandler(function func(http.ResponseWriter, *http.Request, int)) http.HandlerFunc {
@@ -297,6 +360,19 @@ func makeNoteIDHandler(function func(http.ResponseWriter, *http.Request, int)) h
 	}
 }
 
+var validFilterPath = regexp.MustCompile("^/(Title|Text|Both)Filter/([0-9a-zA-Z]+)$")
+
+func makeFilterHandler(function func(http.ResponseWriter, *http.Request, string)) http.HandlerFunc {
+	return func(writer http.ResponseWriter, request *http.Request) {
+		urlTokens := validFilterPath.FindStringSubmatch(request.URL.Path)
+		if urlTokens == nil {
+			http.NotFound(writer, request)
+			return
+		}
+		function(writer, request, urlTokens[2])
+	}
+}
+
 func main() {
 	http.HandleFunc("/", indexHandler)
 	http.HandleFunc("/AddNote/", addNoteHandler)
@@ -308,6 +384,9 @@ func main() {
 	http.HandleFunc("/DeleteNote/", makeNoteIDHandler(deleteNoteHandler))
 	http.HandleFunc("/ConfirmPasteBinNote/", makeNoteIDHandler(confirmPasteBinNoteHandler))
 	http.HandleFunc("/PasteBinNote/", makeNoteIDHandler(pasteBinNoteHandler))
+    http.HandleFunc("/TitleFilter/", makeFilterHandler(titleFilterHandler))
+    http.HandleFunc("/TextFilter/", makeFilterHandler(textFilterHandler))
+    http.HandleFunc("/BothFilter/", makeFilterHandler(bothFilterHandler))
 
 	err := dbManager.Open()
 
