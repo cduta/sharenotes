@@ -73,8 +73,9 @@ func partialHtmlParser(text string) template.HTML {
 		newText = restText
 	}
 
-	var lines []string = strings.Split(newText, "\n")
-	return template.HTML("<div>" + strings.Join(lines, "</div>\n<div>") + "</div>")
+	//var lines []string = strings.Split(newText, "\n")
+	//return template.HTML("<div>" + strings.Join(lines, "</div>\n<div>") + "</div>")
+        return template.HTML(newText)
 }
 
 func noteToHtmlNote(note note.Note) htmlNote {
