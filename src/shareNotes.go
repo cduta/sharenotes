@@ -229,11 +229,14 @@ func noteDetailsHandler(writer http.ResponseWriter, request *http.Request, noteI
 	}
 }
 
+type editNoteData struct {
+        Note note.Note
+        Token synchronizedToken
+}
+
 func editNoteHandler(writer http.ResponseWriter, request *http.Request, noteID int) {
 	var err error
 	var foundNote note.Note
-
-	//fmt.Println("####\nGet Note "+strconv.Itoa(noteID)+"\n####")
 
 	foundNote, err = dbManager.GetNote(noteID)
 	if err != nil {
@@ -241,14 +244,13 @@ func editNoteHandler(writer http.ResponseWriter, request *http.Request, noteID i
 		return
 	}
 
-	err = templates.ExecuteTemplate(writer, "EditNote.html", foundNote)
+	err = templates.ExecuteTemplate(writer, "EditNote.html", editNoteData{Note: foundNote, Token: sidManager.generateSynchronizedToken()})
 	if err != nil {
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 		return
 	}
 }
 
-// Needs Butts
 func saveNoteHandler(writer http.ResponseWriter, request *http.Request, noteID int) {
 	foundNote, err := dbManager.GetNote(noteID)
 	if err != nil {
@@ -258,8 +260,20 @@ func saveNoteHandler(writer http.ResponseWriter, request *http.Request, noteID i
 
 	title := request.FormValue("title")
 	text := request.FormValue("text")
+        tokenID := request.FormValue("share_note_token_id")
+        tokenString := request.FormValue("share_note_token_string")
+        
+        id, err := strconv.ParseUint(tokenID, 10, 64)
+        
+        if err != nil {
+		http.Error(writer, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
-	//fmt.Println("####\nNote "+strconv.Itoa(noteID)+" saved\n"+title+"\n"+text+"\n####")
+        if !sidManager.synchronizedTokenIsValid(synchronizedToken{ID: id, TokenString: tokenString}) {
+                http.Error(writer, "Token was invlaid.", http.StatusInternalServerError)
+                return
+        }
 
 	var dirtyBit bool = false
 	if foundNote.Title() != title {
