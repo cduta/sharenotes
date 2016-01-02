@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Edit {{.Title}} (ID: {{.NoteID}})</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+  <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+</head>
+<body>
+<form action="/SaveNote/{{.NoteID}}" method="POST">
+    <h1><input name="title" rows="1" cols="50" placeholder="Title" value={{.Title}}>(ID: {{.NoteID}})</h1>
+    <div><textarea name="text" rows="20" cols="80" placeholder="Text">{{.Text}}</textarea></div>
+    <div>
+        <input type="submit" value="Save" class="btn btn-success btn-md" value="Submit Button"> 
+        <a href="/Note/{{.NoteID}}" class="btn btn-default btn-md" role="button" target="_top">Cancel</a>
+    </div>
+</form>
+
+ <footer>
+  <small>
+    <div>Last Changed: {{.AddDate}}</div>
+    <div>Created: {{.ChangeDate}}</div>
+  </small>
+</footer> 
+
+</body>
+</html>
