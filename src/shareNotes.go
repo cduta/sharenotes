@@ -14,7 +14,61 @@ import (
 	"strconv"
 	"strings"
 	"time"
+        "math/rand"
 )
+
+type synchronizedToken struct {
+        ID          uint64
+        TokenString string
+}
+
+type sessionIDManager struct {
+        currentID     uint64
+        sessionTokens map[uint64]string
+}
+
+var sidManager sessionIDManager = sessionIDManager{ currentID: 0, sessionTokens: make(map[uint64]string) }
+
+const CHARACTERS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+const CHARACTER_INDEX_BITS = 6                    
+const CHARACTER_INDEX_MASK = 1 << CHARACTER_INDEX_BITS - 1 
+const CHARACTER_INDEX_MAX  = 63 / CHARACTER_INDEX_BITS   
+
+var src = rand.NewSource(time.Now().UnixNano())
+
+func randomStringLength(n int) string {
+    var result []byte = make([]byte, n)
+    var cache int64 = src.Int63()
+    var remain int = CHARACTER_INDEX_MAX
+    
+    for i := n-1; i >= 0; {
+        if remain == 0 {
+            cache = src.Int63()
+            remain = CHARACTER_INDEX_MAX
+        }
+        if j := int(cache & CHARACTER_INDEX_MASK); j < len(CHARACTERS) {
+            result[i] = CHARACTERS[j]
+            i--
+        }
+        cache >>= CHARACTER_INDEX_BITS
+        remain--
+    }
+
+    return string(result)
+}
+
+func (sidm *sessionIDManager) generateSynchronizedToken() synchronizedToken {
+        var sessionToken synchronizedToken = synchronizedToken{ ID: sidm.currentID, TokenString: randomStringLength(100) }
+        
+        sidm.sessionTokens[sessionToken.ID] = sessionToken.TokenString
+        sidm.currentID++
+        
+        return sessionToken
+}
+
+func (sidm *sessionIDManager) synchronizedTokenIsValid(token synchronizedToken) bool {
+        return sidm.sessionTokens[token.ID] == token.TokenString;
+}
 
 type htmlTable struct {
 	Notes    []htmlNote
@@ -116,8 +170,12 @@ func indexHandler(writer http.ResponseWriter, request *http.Request) {
 	}
 }
 
+type addNoteData struct {
+        Token synchronizedToken
+}
+
 func addNoteHandler(writer http.ResponseWriter, request *http.Request) {
-	err := templates.ExecuteTemplate(writer, "AddNote.html", note.Note{})
+	err := templates.ExecuteTemplate(writer, "AddNote.html", addNoteData{Token: sidManager.generateSynchronizedToken()})
 	if err != nil {
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 		return
@@ -127,15 +185,27 @@ func addNoteHandler(writer http.ResponseWriter, request *http.Request) {
 func newNoteHandler(writer http.ResponseWriter, request *http.Request) {
 	title := request.FormValue("title")
 	text := request.FormValue("text")
+        tokenID := request.FormValue("share_note_token_id")
+        tokenString := request.FormValue("share_note_token_string")
+        
+        id, err := strconv.ParseUint(tokenID, 10, 64)
+        
+        if err != nil {
+		http.Error(writer, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
-	err := dbManager.AddNote(note.New(title, text))
+        if !sidManager.synchronizedTokenIsValid(synchronizedToken{ID: id, TokenString: tokenString}) {
+                http.Error(writer, "Token was invlaid.", http.StatusInternalServerError)
+                return
+        }
+
+	err = dbManager.AddNote(note.New(title, text))
 
 	if err != nil {
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
-	//fmt.Println("####\nAdd Note\n"+title+"\n"+text+"\n####")
 
 	http.Redirect(writer, request, "/", http.StatusFound)
 }
@@ -178,6 +248,7 @@ func editNoteHandler(writer http.ResponseWriter, request *http.Request, noteID i
 	}
 }
 
+// Needs Butts
 func saveNoteHandler(writer http.ResponseWriter, request *http.Request, noteID int) {
 	foundNote, err := dbManager.GetNote(noteID)
 	if err != nil {
@@ -229,6 +300,7 @@ func confirmDeleteNoteHandler(writer http.ResponseWriter, request *http.Request,
 	}
 }
 
+// Needs Butts
 func deleteNoteHandler(writer http.ResponseWriter, request *http.Request, noteID int) {
 	err := dbManager.DeleteNote(noteID)
 	if err != nil {
@@ -256,6 +328,7 @@ func confirmPasteBinNoteHandler(writer http.ResponseWriter, request *http.Reques
 	}
 }
 
+// Needs Butts
 func pasteBinNoteHandler(writer http.ResponseWriter, request *http.Request, noteID int) {
 	var err error
 	var foundNote note.Note
@@ -400,5 +473,10 @@ func main() {
 
 	log.Printf("ShareNotes initialized...")
 
-	http.ListenAndServe(":8080", nil)
+	err = http.ListenAndServe(":8080", nil)
+        
+        if err != nil {
+                log.Fatal(err)
+                return
+        }
 }
