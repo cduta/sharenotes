@@ -227,7 +227,7 @@ func (dbm *DatabaseManager) LoadNotes() ([]note.Note, error) {
 	return dbm.notes, err
 }
 
-func (dbm *DatabaseManager) LoadNotesWhere1(whereClause string, filterText string) ([]note.Note, error) {
+func (dbm *DatabaseManager) LoadNotesWhere(whereClause string, whereParameters ...string) ([]note.Note, error) {
 	dbm.notes = dbm.notes[0:0]
 
 	whereQuery, err := dbm.db.Prepare(whereClause)
@@ -238,38 +238,12 @@ func (dbm *DatabaseManager) LoadNotesWhere1(whereClause string, filterText strin
 
 	defer whereQuery.Close()
 
-	rows, err := whereQuery.Query("%" + filterText + "%")
+        wp := make([]interface{}, len(whereParameters))
+        for i, ps := range whereParameters {
+            wp[i] = ps
+        }
 
-	if err != nil {
-		log.Printf("%q: %s\n", err, "Query select notes where transaction.")
-	} else {
-		defer rows.Close()
-		for rows.Next() {
-			var noteID int
-			var title string
-			var text string
-			var addDate int64
-			var changeDate int64
-			rows.Scan(&noteID, &title, &text, &addDate, &changeDate)
-			dbm.notes = append(dbm.notes, note.NewLocal(noteID, title, text, time.Unix(addDate, 0), time.Unix(changeDate, 0)))
-		}
-	}
-
-	return dbm.notes, err
-}
-
-func (dbm *DatabaseManager) LoadNotesWhere2(whereClause string, filterText1 string, filterText2 string) ([]note.Note, error) {
-	dbm.notes = dbm.notes[0:0]
-
-	whereQuery, err := dbm.db.Prepare(whereClause)
-	if err != nil {
-		log.Printf("%q: %s\n", err, "Initializing select notes where transaction.")
-		return []note.Note{}, err
-	}
-
-	defer whereQuery.Close()
-
-	rows, err := whereQuery.Query("%"+filterText1+"%", "%"+filterText2+"%")
+	rows, err := whereQuery.Query(wp...)
 
 	if err != nil {
 		log.Printf("%q: %s\n", err, "Query select notes where transaction.")

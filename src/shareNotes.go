@@ -369,35 +369,10 @@ func pasteBinNoteHandler(writer http.ResponseWriter, request *http.Request, note
 	http.Redirect(writer, request, output.String(), http.StatusFound)
 }
 
-func filteredIndexHandler1(writer http.ResponseWriter, request *http.Request, whereClause string, filterText string) {
+func filteredIndexHandler(writer http.ResponseWriter, request *http.Request, whereClause string, whereParameters ...string) {
 	var err error
 	var notes []note.Note
-	notes, err = dbManager.LoadNotesWhere1(whereClause, filterText)
-
-	if err != nil {
-		http.Error(writer, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	var htmlNotes []htmlNote
-
-	for _, n := range notes {
-		htmlNotes = append(htmlNotes, noteToHtmlNote(n))
-	}
-
-	table := htmlTable{Notes: htmlNotes, Filtered: true}
-
-	err = templates.ExecuteTemplate(writer, "index.html", table)
-	if err != nil {
-		http.Error(writer, err.Error(), http.StatusInternalServerError)
-		return
-	}
-}
-
-func filteredIndexHandler2(writer http.ResponseWriter, request *http.Request, whereClause string, filterText string) {
-	var err error
-	var notes []note.Note
-	notes, err = dbManager.LoadNotesWhere2(whereClause, filterText, filterText)
+	notes, err = dbManager.LoadNotesWhere(whereClause, whereParameters...)
 
 	if err != nil {
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
@@ -420,15 +395,15 @@ func filteredIndexHandler2(writer http.ResponseWriter, request *http.Request, wh
 }
 
 func titleFilterHandler(writer http.ResponseWriter, request *http.Request, filterInput string) {
-	filteredIndexHandler1(writer, request, manager.SELECT_NOTES_WHERE_TITLE_QS, filterInput)
+	filteredIndexHandler(writer, request, manager.SELECT_NOTES_WHERE_TITLE_QS, "%"+filterInput+"%")
 }
 
 func textFilterHandler(writer http.ResponseWriter, request *http.Request, filterInput string) {
-	filteredIndexHandler1(writer, request, manager.SELECT_NOTES_WHERE_TEXT_QS, filterInput)
+	filteredIndexHandler(writer, request, manager.SELECT_NOTES_WHERE_TEXT_QS, "%"+filterInput+"%")
 }
 
 func bothFilterHandler(writer http.ResponseWriter, request *http.Request, filterInput string) {
-	filteredIndexHandler2(writer, request, manager.SELECT_NOTES_WHERE_BOTH_QS, filterInput)
+	filteredIndexHandler(writer, request, manager.SELECT_NOTES_WHERE_BOTH_QS, "%"+filterInput+"%", "%"+filterInput+"%")
 }
 
 var validNotePath = regexp.MustCompile("^/(Note|ConfirmDeleteNote|SaveNote|ConfirmPasteBinNote)/([0-9]+)$")
@@ -450,7 +425,7 @@ func makeNoteIDHandler(function func(http.ResponseWriter, *http.Request, int)) h
 	}
 }
 
-var validFilterPath = regexp.MustCompile("^/(Title|Text|Both)Filter/([0-9a-zA-Z]+)$")
+var validFilterPath = regexp.MustCompile("^/(Title|Text|Both)Filter/([0-9a-zA-Z ]+)$")
 
 func makeFilterHandler(function func(http.ResponseWriter, *http.Request, string)) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
