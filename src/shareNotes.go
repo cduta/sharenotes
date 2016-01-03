@@ -411,7 +411,7 @@ var validNotePath = regexp.MustCompile("^/(Note|ConfirmDeleteNote|SaveNote|Confi
 func makeNoteIDHandler(function func(http.ResponseWriter, *http.Request, int)) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
                 if tooManyRequests() {
-                        http.Error(writer, "Slow down, buddy!", 429)
+                        http.Error(writer, "429 TooManyRequests: Slow down, buddy!", 429)
                         return
                 }
                 
