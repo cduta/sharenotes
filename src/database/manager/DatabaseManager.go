@@ -23,7 +23,8 @@ const INITIALIZE_NOTES_TABLE_EXEC = `create table notes (
     );`
 
 const SELECT_NOTES_QS = `select noteID, title, text, addDate, changeDate 
-     from notes`
+     from notes
+     order by changeDate desc`
 
 const LOOKUP_NOTE_QS = `select title, text, addDate, changeDate 
      from notes
@@ -31,15 +32,18 @@ const LOOKUP_NOTE_QS = `select title, text, addDate, changeDate
 
 const SELECT_NOTES_WHERE_TITLE_QS = `select noteID, title, text, addDate, changeDate 
      from notes
-     where title like ?`
+     where title like ?
+     order by changeDate desc`
 
 const SELECT_NOTES_WHERE_TEXT_QS = `select noteID, title, text, addDate, changeDate 
      from notes
-     where text like ?`
+     where text like ?
+     order by changeDate desc`
 
 const SELECT_NOTES_WHERE_BOTH_QS = `select noteID, title, text, addDate, changeDate 
      from notes
-     where title like ? or text like ?`
+     where title like ? or text like ?
+     order by changeDate desc`
 
 const ADD_NOTE_EXEC = `insert into notes(title, text, addDate, changeDate) 
      values(?, ?, ?, ?);`
