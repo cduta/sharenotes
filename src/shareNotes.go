@@ -225,7 +225,7 @@ func noteDetailsHandler(writer http.ResponseWriter, request *http.Request, noteI
 		return
 	}
 
-	err = templates.ExecuteTemplate(writer, "Note.html", foundNote)
+	err = templates.ExecuteTemplate(writer, "Note.html", noteToHtmlNote(foundNote))
 	if err != nil {
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 		return
