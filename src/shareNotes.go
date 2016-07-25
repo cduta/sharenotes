@@ -97,6 +97,7 @@ func partialHtmlParser(text string) template.HTML {
 		for len(links) > 0 {
 			if strings.HasPrefix(restText, currentLink) {
 				if strings.Contains(currentLink, "http://") ||
+                                        strings.Contains(currentLink, "https://") ||
 					strings.Contains(currentLink, "bitcoin://") ||
 					strings.Contains(currentLink, "file://") ||
 					strings.Contains(currentLink, "magnet://") ||
