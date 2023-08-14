@@ -23,4 +23,4 @@ MIT: https://opensource.org/licenses/MIT
 Author
 ------
 
-Christian Duta (a.k.a RyogaU)
+Christian Duta
